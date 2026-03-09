@@ -1,0 +1,74 @@
+package com.jobportal.job_portal.service;
+
+import com.jobportal.job_portal.dto.CompanyRequest;
+import com.jobportal.job_portal.dto.CompanyResponse;
+import com.jobportal.job_portal.entity.CompanyEntity;
+import com.jobportal.job_portal.entity.UserEntity;
+import com.jobportal.job_portal.exception.ResourceNotFoundException;
+import com.jobportal.job_portal.mapper.CompanyMapper;
+import com.jobportal.job_portal.repository.CompanyRepository;
+import com.jobportal.job_portal.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class CompanyService {
+
+    private final CompanyRepository companyRepository;
+    private final UserRepository userRepository;
+    private final CompanyMapper companyMapper;
+
+    // 1. Dành cho Employer: Lấy thông tin công ty của chính mình
+    public CompanyResponse getMyCompany(String email) {
+        CompanyEntity company = companyRepository.findByUser_Email(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Hồ sơ công ty chưa được tạo. Vui lòng cập nhật!"));
+        return companyMapper.toResponse(company);
+    }
+
+    // 2. Dành cho Employer: Tạo mới hoặc Cập nhật thông tin công ty
+    @Transactional
+    public CompanyResponse updateMyCompany(String email, CompanyRequest request) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản nhà tuyển dụng"));
+
+        // Tìm công ty cũ, nếu chưa có thì khởi tạo mới
+        CompanyEntity company = companyRepository.findByUser_Email(email)
+                .orElse(new CompanyEntity());
+
+        company.setUser(user);
+        company.setCompanyName(request.getCompanyName());
+        company.setDescription(request.getDescription());
+        company.setWebsite(request.getWebsite());
+        company.setLocation(request.getLocation());
+
+        CompanyEntity savedCompany = companyRepository.save(company);
+        log.info("Cập nhật hồ sơ công ty thành công cho tài khoản: {}", email);
+
+        return companyMapper.toResponse(savedCompany);
+    }
+
+    // 3. Dành cho Public (Ứng viên): Xem chi tiết 1 công ty bất kỳ theo ID
+    public CompanyResponse getCompanyById(Long id) {
+        CompanyEntity company = companyRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy công ty này"));
+        return companyMapper.toResponse(company);
+    }
+
+    // 4. Dành cho Public (Ứng viên): Xem danh sách tất cả công ty
+    public List<CompanyResponse> getAllCompanies() {
+        // Lấy tất cả từ DB
+        List<CompanyEntity> companies = companyRepository.findAll();
+
+        // Map sang danh sách Response (DTO)
+        return companies.stream()
+                .map(companyMapper::toResponse)
+                .toList();
+    }
+}

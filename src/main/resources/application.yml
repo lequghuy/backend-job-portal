@@ -1,0 +1,9 @@
+jwt:
+  secret: 1234567890123456789012345678901234567890123456789012345678901234
+  expiration: 86400000 # 1 ngày (Access Token)
+  refresh-expiration: 604800000 # 7 ngày (Refresh Token)
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB

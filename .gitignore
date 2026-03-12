@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Bỏ qua thư mục chứa ảnh upload của người dùng
+/src/main/resources/static/uploads/

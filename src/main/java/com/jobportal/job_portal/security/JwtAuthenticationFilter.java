@@ -9,7 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import com.jobportal.job_portal.service.CustomUserDetailsService;
-
+import io.jsonwebtoken.ExpiredJwtException;
 import java.io.IOException;
 
 @Component
@@ -20,12 +20,11 @@ public class JwtAuthenticationFilter extends GenericFilter {
     private final CustomUserDetailsService userDetailsService;
 
     @Override
-    public void doFilter(ServletRequest request,
-            ServletResponse response,
-            FilterChain chain)
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
         HttpServletRequest httpRequest = (HttpServletRequest) request;
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         String header = httpRequest.getHeader("Authorization");
 
@@ -36,21 +35,37 @@ public class JwtAuthenticationFilter extends GenericFilter {
 
         String token = header.substring(7);
 
-        String email = jwtService.extractUsername(token);
+        try {
+            // Chỉ kiểm tra token trong khối try-catch
+            String email = jwtService.extractUsername(token);
 
-        if (email != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
 
-            UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                if (jwtService.isTokenValid(token, email)) {
+                    UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(auth);
+                }
+            }
 
-            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                    userDetails,
-                    null,
-                    userDetails.getAuthorities());
+        } catch (ExpiredJwtException ex) {
+            System.out.println("Token đã hết hạn: " + ex.getMessage());
+            httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            httpResponse.setContentType("application/json;charset=UTF-8");
+            httpResponse.getWriter()
+                    .write("{\"success\": false, \"message\": \"Token đã hết hạn, vui lòng đăng nhập lại\"}");
+            return; // Dừng tại đây, không cho đi tiếp
 
-            SecurityContextHolder.getContext().setAuthentication(auth);
+        } catch (Exception ex) {
+            System.out.println("Token không hợp lệ: " + ex.getMessage());
+            httpResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            httpResponse.setContentType("application/json;charset=UTF-8");
+            httpResponse.getWriter().write("{\"success\": false, \"message\": \"Token không hợp lệ\"}");
+            return; // Dừng tại đây, không cho đi tiếp
         }
 
+        // ĐEM RA NGOÀI: Nếu token hợp lệ thì mới cho request đi tiếp vào Controller
         chain.doFilter(request, response);
     }
 }

@@ -11,6 +11,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
+
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -32,4 +35,15 @@ public class UserController {
         userService.changePassword(principal.getName(), request);
         return ResponseEntity.ok(new ApiResponse<>(true, "Đổi mật khẩu thành công", null));
     }
+
+    // API: Tải ảnh đại diện
+    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ApiResponse<String>> uploadAvatar(
+            Principal principal,
+            @RequestParam("file") MultipartFile file) {
+
+        String avatarUrl = userService.updateAvatar(principal.getName(), file);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Cập nhật ảnh đại diện thành công", avatarUrl));
+    }
+
 }

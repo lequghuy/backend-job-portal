@@ -24,5 +24,6 @@ public class JobResponse {
     private Long companyId;
     private String companyName;
     private String categoryName;
+    private Long categoryId;
     private Set<String> skills; // Danh sách TÊN kỹ năng
 }

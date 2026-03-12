@@ -4,8 +4,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 @Data
 public class JobRequest {
@@ -26,7 +29,8 @@ public class JobRequest {
     private String employmentType; // FULL_TIME, PART_TIME...
     private String experienceLevel; // FRESHER, JUNIOR, SENIOR...
 
-    private LocalDateTime deadline; // Hạn chót nộp CV
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate deadline; // Hạn chót nộp CV
 
     @NotNull(message = "Danh mục ngành nghề không được để trống")
     private Long categoryId;

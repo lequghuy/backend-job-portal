@@ -13,11 +13,14 @@ import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface JobMapper {
-
+    @Mapping(target = "id", source = "id")
     @Mapping(target = "companyId", source = "company.id")
     @Mapping(target = "companyName", source = "company.companyName")
     @Mapping(target = "categoryName", source = "category.name")
+    // SỬA Ở ĐÂY: Sử dụng tên tham số là 'entity'
     @Mapping(target = "skills", expression = "java(mapSkills(entity.getSkills()))")
+    // Đảm bảo trường logo của Company được đưa vào thumbnail của DTO
+    @Mapping(target = "thumbnail", source = "company.logo")
     JobResponse toResponse(JobEntity entity);
 
     List<JobResponse> toResponseList(List<JobEntity> entities);

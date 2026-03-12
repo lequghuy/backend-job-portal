@@ -12,8 +12,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
+
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.util.StringUtils;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -75,5 +87,42 @@ public class UserService {
         log.info("Admin đã chuyển trạng thái tài khoản ID {} thành {}", userId, updatedUser.getIsActive());
 
         return userMapper.toResponse(updatedUser);
+    }
+
+    @Transactional
+    public String updateAvatar(String email, MultipartFile file) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản"));
+
+        if (file.isEmpty()) {
+            throw new ApiException("Vui lòng chọn ảnh");
+        }
+
+        try {
+            // Tạo thư mục uploads/avatars nếu chưa có
+            Path uploadPath = Paths.get("uploads/avatars").toAbsolutePath().normalize();
+            Files.createDirectories(uploadPath);
+
+            // Đổi tên file để không bị trùng
+            String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
+            String fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
+            String newFileName = UUID.randomUUID().toString() + fileExtension;
+
+            // Lưu file
+            Path targetLocation = uploadPath.resolve(newFileName);
+            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+
+            // Lưu tên file vào Database
+            String fileUrl = "/uploads/avatars/" + newFileName;
+            user.setAvatarUrl(fileUrl);
+            userRepository.save(user);
+
+            log.info("Tài khoản {} vừa cập nhật avatar", email);
+            return fileUrl;
+
+        } catch (Exception ex) {
+            log.error("Lỗi lưu ảnh: ", ex);
+            throw new ApiException("Không thể lưu ảnh đại diện. Vui lòng thử lại!");
+        }
     }
 }

@@ -32,6 +32,9 @@ public class JobApplicationService {
     private final UserRepository userRepository;
     private final JobApplicationMapper applicationMapper;
 
+    // Đã được tiêm (inject) sẵn để dùng tạo thông báo
+    private final NotificationService notificationService;
+
     // ==========================================
     // LUỒNG DÀNH CHO CÁC ỨNG VIÊN (CANDIDATE)
     // ==========================================
@@ -67,6 +70,17 @@ public class JobApplicationService {
 
         JobApplicationEntity savedApplication = applicationRepository.save(application);
         log.info("Ứng viên {} đã nộp CV vào Job {}", email, job.getTitle());
+
+        // -----------------------------------------------------------------
+        // TỰ ĐỘNG THÔNG BÁO CHO NHÀ TUYỂN DỤNG KHI CÓ ỨNG VIÊN NỘP CV
+        // -----------------------------------------------------------------
+        UserEntity employerUser = job.getCompany().getUser();
+        String candidateName = candidate.getFullName() != null ? candidate.getFullName() : candidate.getEmail();
+        String messageToEmployer = "Ứng viên " + candidateName + " vừa nộp CV ứng tuyển vào vị trí [" + job.getTitle()
+                + "].";
+        notificationService.createNotification(employerUser, messageToEmployer);
+        // -----------------------------------------------------------------
+
         return applicationMapper.toResponse(savedApplication);
     }
 
@@ -104,20 +118,35 @@ public class JobApplicationService {
             throw new ApiException("Bạn không có quyền cập nhật hồ sơ này");
         }
 
-        application.setStatus(request.getStatus().toUpperCase());
+        String newStatus = request.getStatus().toUpperCase();
+        application.setStatus(newStatus);
         JobApplicationEntity updatedApplication = applicationRepository.save(application);
 
-        log.info("Hồ sơ ID {} đã được chuyển sang trạng thái {}", applicationId, request.getStatus());
+        log.info("Hồ sơ ID {} đã được chuyển sang trạng thái {}", applicationId, newStatus);
+
+        // -----------------------------------------------------------------
+        // TỰ ĐỘNG THÔNG BÁO CHO ỨNG VIÊN KHI NHÀ TUYỂN DỤNG DUYỆT/LOẠI CV
+        // -----------------------------------------------------------------
+        UserEntity candidateUser = application.getCandidate();
+
+        // Dịch trạng thái sang tiếng Việt cho thân thiện
+        String statusVN = newStatus;
+        if (newStatus.equals("ACCEPTED"))
+            statusVN = "CHẤP NHẬN";
+        else if (newStatus.equals("REJECTED"))
+            statusVN = "TỪ CHỐI";
+
+        String messageToCandidate = "Hồ sơ ứng tuyển vị trí [" + application.getJob().getTitle()
+                + "] của bạn đã bị/được " + statusVN + ".";
+        notificationService.createNotification(candidateUser, messageToCandidate);
+        // -----------------------------------------------------------------
+
         return applicationMapper.toResponse(updatedApplication);
     }
 
-    // HÀM MỚI: Lấy tất cả ứng viên của CÔNG TY TÔI
+    // Lấy tất cả ứng viên của CÔNG TY TÔI
     public List<JobApplicationResponse> getAllCandidatesForMyCompany(String email) {
-        // SQL đã tự động chặn các CV của công ty khác, ta chỉ việc lấy ra và map sang
-        // DTO
-        List<JobApplicationEntity> applications = applicationRepository
-                .findByEmployerEmail(email);
-
+        List<JobApplicationEntity> applications = applicationRepository.findByEmployerEmail(email);
         return applicationMapper.toResponseList(applications);
     }
 }

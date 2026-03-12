@@ -40,12 +40,17 @@ public class AuthService {
         UserEntity user = userMapper.toEntity(request, role);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        userRepository.save(user);
+        UserEntity savedUser = userRepository.save(user);
         log.info("Đăng ký thành công cho user: {}", user.getEmail());
 
         return AuthResponse.builder()
                 .accessToken(jwtService.generateToken(user.getEmail()))
                 .refreshToken(jwtService.generateRefreshToken(user.getEmail()))
+                .userId(savedUser.getId())
+                .email(savedUser.getEmail())
+                .fullName(savedUser.getFullName())
+                .avatarUrl(savedUser.getAvatarUrl())
+                .role(savedUser.getRole().getName())
                 .build();
     }
 
@@ -76,6 +81,11 @@ public class AuthService {
         return AuthResponse.builder()
                 .accessToken(jwtService.generateToken(user.getEmail()))
                 .refreshToken(jwtService.generateRefreshToken(user.getEmail()))
+                .userId(user.getId())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .avatarUrl(user.getAvatarUrl())
+                .role(user.getRole().getName())
                 .build();
     }
 

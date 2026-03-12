@@ -8,11 +8,16 @@ import com.jobportal.job_portal.exception.ResourceNotFoundException;
 import com.jobportal.job_portal.mapper.CompanyMapper;
 import com.jobportal.job_portal.repository.CompanyRepository;
 import com.jobportal.job_portal.repository.UserRepository;
+import com.jobportal.job_portal.repository.specification.CompanySpecification;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,13 +67,25 @@ public class CompanyService {
     }
 
     // 4. Dành cho Public (Ứng viên): Xem danh sách tất cả công ty
-    public List<CompanyResponse> getAllCompanies() {
+    public Page<CompanyResponse> getAllCompanies(Pageable pageable) {
         // Lấy tất cả từ DB
-        List<CompanyEntity> companies = companyRepository.findAll();
+        Page<CompanyEntity> companies = companyRepository.findAll(pageable);
 
         // Map sang danh sách Response (DTO)
-        return companies.stream()
-                .map(companyMapper::toResponse)
-                .toList();
+        return companies.map(companyMapper::toResponse);
+
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CompanyResponse> getFilteredCompanies(String keyword, String location, Pageable pageable) {
+        Specification<CompanyEntity> spec = CompanySpecification.filterCompanies(keyword, location);
+        // Nhớ đảm bảo CompanyRepository extends JpaSpecificationExecutor<CompanyEntity>
+        // nhé
+        return companyRepository.findAll(spec, pageable).map(companyMapper::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getDistinctLocations() {
+        return companyRepository.findDistinctLocations();
     }
 }

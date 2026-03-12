@@ -10,6 +10,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -48,6 +49,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/companies/**").permitAll()
+                        .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/skills").permitAll()
                         .requestMatchers("/api/jobs/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/categories").permitAll()
@@ -57,12 +59,20 @@ public class SecurityConfig {
                         .requestMatchers("/api/candidate/**").hasAuthority("CANDIDATE")
                         .requestMatchers("/api/skills/**").hasAuthority("ADMIN")
                         .requestMatchers("/api/categories/**").hasAuthority("ADMIN")
+                        .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public WebSecurityCustomizer webSecurityCustomizer() {
+        // Lệnh này xé rào Spring Security, bỏ qua hoàn toàn JwtFilter đối với các
+        // request lấy file
+        return (web) -> web.ignoring().requestMatchers("/uploads/**");
     }
 
     @Bean

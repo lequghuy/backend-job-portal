@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.jobportal.job_portal.dto.JobRequest;
 import com.jobportal.job_portal.dto.JobResponse;
 import com.jobportal.job_portal.entity.CompanyEntity;
+import com.jobportal.job_portal.entity.EmployerSubscriptionEntity;
 import com.jobportal.job_portal.entity.JobCategoryEntity;
 import com.jobportal.job_portal.entity.JobEntity;
 import com.jobportal.job_portal.entity.SkillEntity;
@@ -28,6 +30,7 @@ import com.jobportal.job_portal.exception.ApiException;
 import com.jobportal.job_portal.exception.ResourceNotFoundException;
 import com.jobportal.job_portal.mapper.JobMapper;
 import com.jobportal.job_portal.repository.CompanyRepository;
+import com.jobportal.job_portal.repository.EmployerSubscriptionRepository;
 import com.jobportal.job_portal.repository.JobCategoryRepository;
 import com.jobportal.job_portal.repository.JobRepository;
 import com.jobportal.job_portal.repository.SkillRepository;
@@ -46,6 +49,8 @@ public class JobService {
     private final JobCategoryRepository categoryRepository;
     private final SkillRepository skillRepository;
     private final JobMapper jobMapper;
+
+    private final EmployerSubscriptionRepository subscriptionRepository;
 
     // --- LUỒNG PUBLIC ---
     @Transactional(readOnly = true)
@@ -73,6 +78,30 @@ public class JobService {
         CompanyEntity company = companyRepository.findByUser_Email(email)
                 .orElseThrow(() -> new ApiException("Bạn cần cập nhật Profile Công ty trước khi đăng việc làm!"));
 
+        // ==========================================
+        // LOGIC KIỂM TRA GÓI DỊCH VỤ Ở ĐÂY
+        // ==========================================
+        EmployerSubscriptionEntity activeSub = subscriptionRepository
+                .findFirstByEmployer_EmailAndStatusOrderByIdDesc(email, "ACTIVE")
+                .orElseThrow(() -> new ApiException(
+                        "Bạn không có gói dịch vụ nào đang hoạt động. Vui lòng mua gói để đăng tin!"));
+
+        // 1. Kiểm tra thời hạn
+        if (LocalDateTime.now().isAfter(activeSub.getEndDate())) {
+            activeSub.setStatus("EXPIRED");
+            subscriptionRepository.save(activeSub);
+            throw new ApiException(
+                    "Gói dịch vụ của bạn đã hết hạn vào lúc " + activeSub.getEndDate() + ". Vui lòng mua gói mới!");
+        }
+
+        // 2. Kiểm tra số lượng bài đăng
+        if (activeSub.getJobsPosted() >= activeSub.getMaxJobs()) {
+            activeSub.setStatus("EXPIRED"); // Dùng hết lượt thì cũng coi như hết gói
+            subscriptionRepository.save(activeSub);
+            throw new ApiException("Bạn đã dùng hết " + activeSub.getMaxJobs() + " lượt đăng tin của gói này!");
+        }
+        // ==========================================
+
         JobCategoryEntity category = categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new ResourceNotFoundException("Danh mục không tồn tại"));
 
@@ -83,6 +112,19 @@ public class JobService {
         job.setStatus("OPEN");
 
         JobEntity savedJob = jobRepository.save(job);
+
+        // ==========================================
+        // CỘNG LƯỢT ĐĂNG BÀI LÊN 1
+        // ==========================================
+        activeSub.setJobsPosted(activeSub.getJobsPosted() + 1);
+
+        // Nếu vừa đăng xong bài này mà hết sạch quota thì chuyển thành EXPIRED luôn
+        if (activeSub.getJobsPosted().equals(activeSub.getMaxJobs())) {
+            activeSub.setStatus("EXPIRED");
+        }
+        subscriptionRepository.save(activeSub);
+        // ==========================================
+
         log.info("Đăng việc làm mới thành công: {}", savedJob.getTitle());
         return jobMapper.toResponse(savedJob);
     }
@@ -133,7 +175,7 @@ public class JobService {
 
         // ĐÃ SỬA: Ép kiểu LocalDate thành LocalDateTime (Cuối ngày)
         if (request.getDeadline() != null) {
-            job.setDeadline(request.getDeadline().atTime(23, 59, 59));
+            job.setDeadline(request.getDeadline());
         }
 
         if (request.getSkillIds() != null && !request.getSkillIds().isEmpty()) {

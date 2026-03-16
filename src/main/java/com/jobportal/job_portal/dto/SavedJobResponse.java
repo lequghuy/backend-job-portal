@@ -15,6 +15,7 @@ public class SavedJobResponse {
     private Double salaryMin;
     private Double salaryMax;
     private String status;
+    private String thumbnail;
 
     private LocalDateTime savedAt;
 }

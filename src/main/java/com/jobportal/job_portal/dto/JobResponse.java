@@ -2,6 +2,7 @@ package com.jobportal.job_portal.dto;
 
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -15,7 +16,7 @@ public class JobResponse {
     private String location;
     private String employmentType;
     private String experienceLevel;
-    private LocalDateTime deadline;
+    private LocalDate deadline;
     private String status;
     private LocalDateTime createdAt;
     private String thumbnail;

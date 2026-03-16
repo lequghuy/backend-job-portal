@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.Principal;
 
@@ -30,5 +31,17 @@ public class EmployerCompanyController {
             @Valid @RequestBody CompanyRequest request) {
         CompanyResponse responseData = companyService.updateMyCompany(principal.getName(), request);
         return ResponseEntity.ok(new ApiResponse<>(true, "Cập nhật hồ sơ công ty thành công", responseData));
+    }
+
+    // SỬA Ở ĐÂY: Chỉ để lại phần đuôi của URL
+    @PostMapping("/upload-logo") 
+    public ResponseEntity<ApiResponse<String>> uploadLogo(
+            Principal principal,
+            @RequestParam("file") MultipartFile file) {
+
+        // Gọi service xử lý (Mình sẽ viết hàm này ở bước dưới)
+        String fileName = companyService.uploadLogo(principal.getName(), file);
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Upload logo thành công", fileName));
     }
 }

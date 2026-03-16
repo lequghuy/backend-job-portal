@@ -2,6 +2,7 @@ package com.jobportal.job_portal.service;
 
 import com.jobportal.job_portal.dto.ChangePasswordRequest;
 import com.jobportal.job_portal.dto.UserResponse;
+import com.jobportal.job_portal.dto.UserUpdateRequest;
 import com.jobportal.job_portal.entity.UserEntity;
 import com.jobportal.job_portal.exception.ApiException;
 import com.jobportal.job_portal.exception.ResourceNotFoundException;
@@ -67,6 +68,19 @@ public class UserService {
         log.info("Tài khoản {} vừa đổi mật khẩu thành công", email);
     }
 
+    @Transactional
+    public UserResponse updateMyProfile(String currentEmail, UserUpdateRequest request) {
+        UserEntity user = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản"));
+
+        // Chỉ cho phép đổi Họ và Tên
+        user.setFullName(request.getFullName());
+
+        UserEntity updatedUser = userRepository.save(user);
+        log.info("Tài khoản {} vừa cập nhật Họ tên thành {}", currentEmail, request.getFullName());
+
+        return userMapper.toResponse(updatedUser);
+    }
     // --- LUỒNG QUẢN TRỊ (Chỉ dành cho ADMIN) ---
 
     // 3. Lấy danh sách toàn bộ User

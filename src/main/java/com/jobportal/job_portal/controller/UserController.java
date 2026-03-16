@@ -3,6 +3,7 @@ package com.jobportal.job_portal.controller;
 import com.jobportal.job_portal.dto.ApiResponse;
 import com.jobportal.job_portal.dto.ChangePasswordRequest;
 import com.jobportal.job_portal.dto.UserResponse;
+import com.jobportal.job_portal.dto.UserUpdateRequest;
 import com.jobportal.job_portal.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,16 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserResponse>> getMyProfile(Principal principal) {
         UserResponse response = userService.getMyProfile(principal.getName());
         return ResponseEntity.ok(new ApiResponse<>(true, "Lấy thông tin tài khoản thành công", response));
+    }
+
+    // API: Cập nhật thông tin cơ bản (Tên, Email)
+    @PutMapping("/me")
+    public ResponseEntity<ApiResponse<UserResponse>> updateMyProfile(
+            Principal principal,
+            @Valid @RequestBody UserUpdateRequest request) {
+
+        UserResponse response = userService.updateMyProfile(principal.getName(), request);
+        return ResponseEntity.ok(new ApiResponse<>(true, "Cập nhật thông tin thành công", response));
     }
 
     // API: Đổi mật khẩu

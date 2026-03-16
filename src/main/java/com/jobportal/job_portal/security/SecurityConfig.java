@@ -60,6 +60,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/skills/**").hasAuthority("ADMIN")
                         .requestMatchers("/api/categories/**").hasAuthority("ADMIN")
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/payment/vnpay-ipn").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/plans").permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())

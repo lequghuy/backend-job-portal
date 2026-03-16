@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "employer_subscriptions")
 @Data
@@ -18,6 +20,7 @@ public class EmployerSubscriptionEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "employer_id")
     private UserEntity employer;
@@ -26,11 +29,16 @@ public class EmployerSubscriptionEntity {
     @JoinColumn(name = "plan_id")
     private SubscriptionPlanEntity plan;
 
+    // Đổi sang LocalDateTime để tính hạn chính xác từng giây
     private LocalDateTime startDate;
-
     private LocalDateTime endDate;
 
-    private Integer jobsPosted;
+    // --- TRƯỜNG THÊM MỚI ---
+    // Snapshot quyền lợi tại thời điểm mua. Tránh lỗi khi Admin sửa Plan.
+    private Integer maxJobs;
+    // ----------------------
 
-    private String status;
+    private Integer jobsPosted = 0; // Khởi tạo mặc định là 0
+
+    private String status; // ACTIVE, EXPIRED, PENDING
 }

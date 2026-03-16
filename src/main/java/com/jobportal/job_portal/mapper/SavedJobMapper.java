@@ -17,6 +17,7 @@ public interface SavedJobMapper {
     @Mapping(target = "salaryMin", source = "job.salaryMin")
     @Mapping(target = "salaryMax", source = "job.salaryMax")
     @Mapping(target = "status", source = "job.status")
+    @Mapping(target = "thumbnail", source = "job.thumbnail")
     SavedJobResponse toResponse(SavedJobEntity entity);
 
     List<SavedJobResponse> toResponseList(List<SavedJobEntity> entities);

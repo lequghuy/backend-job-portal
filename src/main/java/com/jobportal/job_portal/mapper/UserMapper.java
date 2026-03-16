@@ -4,6 +4,7 @@ import com.jobportal.job_portal.dto.RegisterRequest;
 import com.jobportal.job_portal.dto.UserResponse;
 import com.jobportal.job_portal.entity.RoleEntity;
 import com.jobportal.job_portal.entity.UserEntity;
+//dung thu vien mapstruct de tu dong map giua DTO va Entity, giam thieu code boilerplate
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

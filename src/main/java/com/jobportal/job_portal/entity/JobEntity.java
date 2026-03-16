@@ -8,6 +8,7 @@ import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.Set;
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "jobs")
@@ -45,7 +46,7 @@ public class JobEntity {
     private String employmentType; // Ví dụ: FULL_TIME, PART_TIME, FREELANCE
     private String experienceLevel; // Ví dụ: FRESHER, JUNIOR, MIDDLE, SENIOR
 
-    private LocalDateTime deadline; // Hạn chót nộp hồ sơ
+    private LocalDate deadline; // Hạn chót nộp hồ sơ
 
     // Bảng trung gian job_skills (Các kỹ năng yêu cầu)
     @ManyToMany

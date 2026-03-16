@@ -19,6 +19,8 @@ public interface JobMapper {
     @Mapping(target = "categoryName", source = "category.name")
     // SỬA Ở ĐÂY: Sử dụng tên tham số là 'entity'
     @Mapping(target = "skills", expression = "java(mapSkills(entity.getSkills()))")
+    @Mapping(target = "salaryMin", source = "salaryMin")
+    @Mapping(target = "salaryMax", source = "salaryMax")
     // Đảm bảo trường logo của Company được đưa vào thumbnail của DTO
     @Mapping(target = "thumbnail", source = "thumbnail")
     JobResponse toResponse(JobEntity entity);

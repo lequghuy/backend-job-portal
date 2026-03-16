@@ -10,6 +10,8 @@ import com.jobportal.job_portal.mapper.UserMapper;
 import com.jobportal.job_portal.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.UUID;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @Service
 @RequiredArgsConstructor
@@ -84,8 +91,14 @@ public class UserService {
     // --- LUỒNG QUẢN TRỊ (Chỉ dành cho ADMIN) ---
 
     // 3. Lấy danh sách toàn bộ User
-    public List<UserResponse> getAllUsers() {
-        return userMapper.toResponseList(userRepository.findAll());
+    public Page<UserResponse> getAllUsers(int page, int size) {
+        // Sắp xếp ID giảm dần để User mới đăng ký lên đầu
+        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+
+        Page<UserEntity> userPage = userRepository.findAll(pageable);
+
+        // Map từ Page<UserEntity> sang Page<UserResponse>
+        return userPage.map(userMapper::toResponse);
     }
 
     // 4. Khóa / Mở khóa tài khoản (Ban/Unban)

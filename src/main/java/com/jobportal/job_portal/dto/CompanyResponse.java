@@ -10,4 +10,8 @@ public class CompanyResponse {
     private String website;
     private String location;
     private String logo;
+
+    // Lấy thêm thông tin từ UserEntity liên kết với Công ty này
+    private String email;
+    private Boolean isActive;
 }

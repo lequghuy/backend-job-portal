@@ -11,6 +11,7 @@ public class JobApplicationResponse {
     private Long jobId;
     private String jobTitle;
     private String companyName;
+    private String employerEmail;
 
     // Thông tin Ứng viên & CV
     private Long candidateId;

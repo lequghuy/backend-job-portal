@@ -2,11 +2,15 @@ package com.jobportal.job_portal.repository;
 
 import com.jobportal.job_portal.entity.JobEntity;
 
+import jakarta.transaction.Transactional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -32,4 +36,9 @@ public interface JobRepository extends JpaRepository<JobEntity, Long>, JpaSpecif
     List<String> findDistinctExperienceLevels();
 
     Page<JobEntity> findByCompany_User_Email(String email, Pageable pageable);
+
+    @Modifying
+    @Transactional // Quan trọng: Phải có Transactional để thực hiện lệnh Update
+    @Query("UPDATE JobEntity j SET j.status = :status WHERE j.company.id = :companyId")
+    void updateStatusByCompanyId(@Param("companyId") Long companyId, @Param("status") String status);
 }

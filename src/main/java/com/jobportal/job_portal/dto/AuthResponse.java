@@ -1,5 +1,7 @@
 package com.jobportal.job_portal.dto;
 
+import java.util.List;
+
 import lombok.*;
 
 @Data
@@ -18,4 +20,5 @@ public class AuthResponse {
     private String avatarUrl;
     private String role;
 
+    private List<String> permissions;
 }

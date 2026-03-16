@@ -7,6 +7,7 @@ import com.jobportal.job_portal.service.JobCategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,6 +28,7 @@ public class JobCategoryController {
 
     // API cho Admin
     @PostMapping
+    @PreAuthorize("hasAuthority('MANAGE_CATEGORIES')")
     public ResponseEntity<ApiResponse<JobCategoryResponse>> createCategory(
             @Valid @RequestBody JobCategoryRequest request) {
         JobCategoryResponse response = categoryService.createCategory(request);
@@ -34,6 +36,7 @@ public class JobCategoryController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('MANAGE_CATEGORIES')")
     public ResponseEntity<ApiResponse<JobCategoryResponse>> updateCategory(
             @PathVariable Long id, @Valid @RequestBody JobCategoryRequest request) {
         JobCategoryResponse response = categoryService.updateCategory(id, request);
@@ -41,6 +44,7 @@ public class JobCategoryController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAuthority('MANAGE_CATEGORIES')")
     public ResponseEntity<ApiResponse<String>> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
         return ResponseEntity.ok(new ApiResponse<>(true, "Xóa danh mục thành công", null));

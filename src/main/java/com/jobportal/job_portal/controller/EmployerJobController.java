@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,6 +25,7 @@ import org.springframework.data.domain.Sort;
 @RestController
 @RequestMapping("/api/employer/jobs")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('MANAGE_OWN_JOBS')")
 public class EmployerJobController {
 
     private final JobService jobService;

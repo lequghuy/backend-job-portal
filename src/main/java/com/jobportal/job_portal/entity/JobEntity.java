@@ -5,6 +5,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -15,6 +17,9 @@ import java.time.LocalDate;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@SQLDelete(sql = "UPDATE jobs SET is_deleted = true WHERE id = ?")
+@SQLRestriction("is_deleted = false")
+
 public class JobEntity {
 
     @Id
@@ -56,4 +61,6 @@ public class JobEntity {
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;
+    @Column(name = "is_deleted", nullable = false)
+    private Boolean isDeleted = false;
 }

@@ -7,6 +7,7 @@ import com.jobportal.job_portal.service.CompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,6 +16,7 @@ import java.security.Principal;
 @RestController
 @RequestMapping("/api/employer/company")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('MANAGE_OWN_COMPANY')")
 public class EmployerCompanyController {
 
     private final CompanyService companyService;
@@ -34,7 +36,7 @@ public class EmployerCompanyController {
     }
 
     // SỬA Ở ĐÂY: Chỉ để lại phần đuôi của URL
-    @PostMapping("/upload-logo") 
+    @PostMapping("/upload-logo")
     public ResponseEntity<ApiResponse<String>> uploadLogo(
             Principal principal,
             @RequestParam("file") MultipartFile file) {

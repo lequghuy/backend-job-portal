@@ -7,6 +7,7 @@ import com.jobportal.job_portal.entity.UserEntity;
 import com.jobportal.job_portal.exception.ApiException;
 import com.jobportal.job_portal.exception.ResourceNotFoundException;
 import com.jobportal.job_portal.mapper.UserMapper;
+import com.jobportal.job_portal.repository.RoleRepository;
 import com.jobportal.job_portal.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final RoleRepository roleRepository;
 
     // --- LUỒNG CÁ NHÂN (Ai đăng nhập cũng dùng được) ---
 
@@ -151,5 +153,30 @@ public class UserService {
             log.error("Lỗi lưu ảnh: ", ex);
             throw new ApiException("Không thể lưu ảnh đại diện. Vui lòng thử lại!");
         }
+    }
+
+    // Thêm hàm này: Tạo tài khoản từ trang Admin
+    @Transactional
+    public UserResponse createUserByAdmin(com.jobportal.job_portal.dto.CreateUserRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new ApiException("Email này đã tồn tại trong hệ thống!");
+        }
+
+        // Tìm Role theo tên (đã ép viết hoa)
+        com.jobportal.job_portal.entity.RoleEntity role = roleRepository.findByName(request.getRoleName().toUpperCase())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Không tìm thấy nhóm quyền: " + request.getRoleName()));
+
+        UserEntity user = new UserEntity();
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword())); // Mã hóa mật khẩu
+        user.setFullName(request.getFullName());
+        user.setRole(role);
+        user.setIsActive(true); // Tài khoản tạo ra mặc định kích hoạt luôn
+
+        UserEntity savedUser = userRepository.save(user);
+        log.info("Admin vừa tạo tài khoản mới: {} với chức vụ: {}", savedUser.getEmail(), role.getName());
+
+        return userMapper.toResponse(savedUser);
     }
 }

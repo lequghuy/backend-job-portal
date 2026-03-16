@@ -14,23 +14,36 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
-@Slf4j // Thêm logging
+@Slf4j
 public class AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager; // Dùng Auth Manager chuẩn
+    private final AuthenticationManager authenticationManager;
     private final UserMapper userMapper;
+
+    // --- HÀM HỖ TRỢ BÓC TÁCH QUYỀN TỪ USER ---
+    private List<String> extractPermissions(UserEntity user) {
+        List<String> permissions = new ArrayList<>();
+        if (user.getRole() != null && user.getRole().getRolePermissions() != null) {
+            for (RolePermissionEntity rp : user.getRole().getRolePermissions()) {
+                permissions.add(rp.getPermission().getName());
+            }
+        }
+        return permissions;
+    }
 
     public AuthResponse register(RegisterRequest request) {
         log.info("Bắt đầu đăng ký user với email: {}", request.getEmail());
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            log.warn("Email đã tồn tại: {}", request.getEmail());
             throw new UserAlreadyExistsException("Email đã tồn tại trong hệ thống");
         }
 
@@ -41,42 +54,39 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         UserEntity savedUser = userRepository.save(user);
-        log.info("Đăng ký thành công cho user: {}", user.getEmail());
+
+        // Lấy danh sách quyền
+        List<String> permissions = extractPermissions(savedUser);
 
         return AuthResponse.builder()
-                .accessToken(jwtService.generateToken(user.getEmail()))
-                .refreshToken(jwtService.generateRefreshToken(user.getEmail()))
+                .accessToken(jwtService.generateToken(savedUser.getEmail()))
+                .refreshToken(jwtService.generateRefreshToken(savedUser.getEmail()))
                 .userId(savedUser.getId())
                 .email(savedUser.getEmail())
                 .fullName(savedUser.getFullName())
                 .avatarUrl(savedUser.getAvatarUrl())
                 .role(savedUser.getRole().getName())
+                .permissions(permissions) // TRẢ VỀ FRONTEND
                 .build();
     }
 
     public AuthResponse login(LoginRequest request) {
-        log.info("Bắt đầu xác thực cho email: {}", request.getEmail());
-
         try {
-            // Spring Security sẽ tự động mã hóa password truyền vào và so sánh với DB
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         } catch (BadCredentialsException e) {
-            // Bắt lỗi khi sai Email hoặc sai Mật khẩu
-            log.warn("Đăng nhập thất bại: Sai email hoặc mật khẩu cho tài khoản {}", request.getEmail());
             throw new InvalidPasswordException("Email hoặc mật khẩu không chính xác");
         }
 
-        // Lúc này chắc chắn đăng nhập đúng rồi thì mới chạy xuống đây
         UserEntity user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User không tồn tại"));
 
         if (!user.getIsActive()) {
-            log.warn("Tài khoản đã bị vô hiệu hóa: {}", request.getEmail());
             throw new ApiException("Tài khoản của bạn đã bị vô hiệu hóa");
         }
 
-        log.info("Đăng nhập thành công cho user: {}", user.getEmail());
+        // Lấy danh sách quyền
+        List<String> permissions = extractPermissions(user);
 
         return AuthResponse.builder()
                 .accessToken(jwtService.generateToken(user.getEmail()))
@@ -86,47 +96,39 @@ public class AuthService {
                 .fullName(user.getFullName())
                 .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().getName())
+                .permissions(permissions) // TRẢ VỀ FRONTEND
                 .build();
     }
 
     public AuthResponse refreshToken(RefreshTokenRequest request) {
-        log.info("Bắt đầu xử lý cấp lại token...");
-
+        // ... (Giữ nguyên logic cũ của refreshToken)
         String requestRefreshToken = request.getRefreshToken();
         String userEmail;
 
         try {
-            // Lấy email từ Refresh Token
             userEmail = jwtService.extractUsername(requestRefreshToken);
         } catch (Exception e) {
-            log.warn("Refresh Token không hợp lệ hoặc đã bị lỗi can thiệp");
             throw new ApiException("Refresh Token không hợp lệ");
         }
 
         if (userEmail != null) {
-            // Kiểm tra user có tồn tại trong hệ thống không
             UserEntity user = userRepository.findByEmail(userEmail)
                     .orElseThrow(() -> new ResourceNotFoundException("User không tồn tại"));
 
-            // Kiểm tra token có đúng của user này và còn hạn hay không
             if (jwtService.isTokenValid(requestRefreshToken, userEmail)) {
-
-                // Cấp lại cặp Token mới tinh (Token Rotation)
                 String newAccessToken = jwtService.generateToken(userEmail);
                 String newRefreshToken = jwtService.generateRefreshToken(userEmail);
 
-                log.info("Cấp lại Token thành công cho user: {}", userEmail);
-
+                // Khi refresh token, ta không cần trả lại full info (hoặc trả full cũng được
+                // tùy thiết kế)
                 return AuthResponse.builder()
                         .accessToken(newAccessToken)
                         .refreshToken(newRefreshToken)
                         .build();
             } else {
-                log.warn("Refresh Token đã hết hạn cho user: {}", userEmail);
                 throw new ApiException("Refresh Token đã hết hạn, vui lòng đăng nhập lại");
             }
         }
-
         throw new ApiException("Không thể xác thực Refresh Token");
     }
 }

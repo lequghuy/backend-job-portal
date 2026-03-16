@@ -7,6 +7,7 @@ import com.jobportal.job_portal.service.JobApplicationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -15,6 +16,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/candidate/applications")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('APPLY_JOBS')")
 public class CandidateApplicationController {
 
     private final JobApplicationService applicationService;

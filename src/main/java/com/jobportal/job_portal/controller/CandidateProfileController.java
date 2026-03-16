@@ -7,6 +7,7 @@ import com.jobportal.job_portal.service.CandidateProfileService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -14,6 +15,7 @@ import java.security.Principal;
 @RestController
 @RequestMapping("/api/candidate/profile")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('MANAGE_OWN_PROFILE')")
 public class CandidateProfileController {
 
     private final CandidateProfileService profileService;

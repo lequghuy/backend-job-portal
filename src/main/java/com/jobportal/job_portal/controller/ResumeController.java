@@ -7,6 +7,7 @@ import com.jobportal.job_portal.service.ResumeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -18,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 @RequestMapping("/api/candidate/resumes")
 @RequiredArgsConstructor
+@PreAuthorize("hasAuthority('MANAGE_RESUMES')")
 public class ResumeController {
 
     private final ResumeService resumeService;

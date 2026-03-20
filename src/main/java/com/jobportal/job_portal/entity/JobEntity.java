@@ -13,7 +13,11 @@ import java.util.Set;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "jobs")
+@Table(name = "jobs", indexes = {
+        @Index(name = "idx_job_status_created", columnList = "status, createdAt DESC"),
+        @Index(name = "idx_job_location", columnList = "location"),
+        @Index(name = "idx_job_type_level", columnList = "employmentType, experienceLevel")
+})
 @Data
 @NoArgsConstructor
 @AllArgsConstructor

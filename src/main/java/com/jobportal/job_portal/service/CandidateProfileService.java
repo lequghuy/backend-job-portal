@@ -31,7 +31,14 @@ public class CandidateProfileService {
     // Xem hồ sơ của chính mình
     public CandidateProfileResponse getMyProfile(String email) {
         CandidateProfileEntity profile = profileRepository.findByUser_Email(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Hồ sơ chưa được tạo. Vui lòng cập nhật hồ sơ!"));
+                .orElse(null);
+
+        // NẾU CHƯA CÓ HỒ SƠ -> Trả về đối tượng rỗng thay vì báo lỗi 404
+        if (profile == null) {
+            CandidateProfileResponse emptyProfile = new CandidateProfileResponse();
+            emptyProfile.setSkills(new java.util.HashSet<>()); // Khởi tạo mảng rỗng để tránh lỗi Frontend
+            return emptyProfile;
+        }
 
         return profileMapper.toResponse(profile);
     }

@@ -1,6 +1,7 @@
 package com.jobportal.job_portal.service;
 
 import com.jobportal.job_portal.config.VnpayConfig;
+import com.jobportal.job_portal.dto.PaymentHistoryResponse;
 import com.jobportal.job_portal.entity.*;
 import com.jobportal.job_portal.exception.ResourceNotFoundException;
 import com.jobportal.job_portal.repository.*;
@@ -17,6 +18,11 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.time.temporal.ChronoUnit;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @Service
 @RequiredArgsConstructor
@@ -274,5 +280,55 @@ public class PaymentService {
             log.error("Lỗi xác thực chữ ký VNPAY", e);
             return false;
         }
+    }
+
+    // History payment của Employer
+    public Page<PaymentHistoryResponse> getEmployerPaymentHistory(String email, int page, int size) {
+        // 1. Khởi tạo phân trang, sắp xếp giao dịch mới nhất lên đầu
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        // 2. Truy vấn dữ liệu từ DB
+        Page<PaymentEntity> paymentPage = paymentRepository.findByEmployer_Email(email, pageable);
+
+        // 3. Map từ Entity sang Response DTO
+        return paymentPage.map(p -> PaymentHistoryResponse.builder()
+                .id(p.getId())
+                .planName(p.getSubscription() != null && p.getSubscription().getPlan() != null
+                        ? p.getSubscription().getPlan().getName()
+                        : "N/A")
+                .amount(p.getAmount())
+                .txnRef(p.getTxnRef())
+                .paymentStatus(p.getPaymentStatus())
+                .bankCode(p.getBankCode())
+                .createdAt(p.getCreatedAt())
+                .build());
+    }
+
+    // thêm hàm này dành cho Admin để xem tất cả giao dịch của employer
+    // ========================================================
+    // HÀM DÀNH CHO ADMIN: LẤY TẤT CẢ GIAO DỊCH TRÊN HỆ THỐNG
+    // ========================================================
+    public org.springframework.data.domain.Page<com.jobportal.job_portal.dto.PaymentHistoryResponse> getAllPaymentsForAdmin(
+            int page, int size) {
+
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size,
+                org.springframework.data.domain.Sort.by("createdAt").descending());
+
+        // Lấy tất cả giao dịch từ DB
+        org.springframework.data.domain.Page<PaymentEntity> paymentPage = paymentRepository.findAll(pageable);
+
+        return paymentPage.map(p -> com.jobportal.job_portal.dto.PaymentHistoryResponse.builder()
+                .id(p.getId())
+                .planName(p.getSubscription() != null && p.getSubscription().getPlan() != null
+                        ? p.getSubscription().getPlan().getName()
+                        : "N/A")
+                .amount(p.getAmount())
+                .txnRef(p.getTxnRef())
+                .paymentStatus(p.getPaymentStatus())
+                .bankCode(p.getBankCode())
+                .createdAt(p.getCreatedAt())
+                // Lấy email của người mua để Admin biết ai là người thanh toán
+                .employerEmail(p.getEmployer() != null ? p.getEmployer().getEmail() : "N/A")
+                .build());
     }
 }

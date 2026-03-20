@@ -1,15 +1,20 @@
 package com.jobportal.job_portal.controller;
 
 import com.jobportal.job_portal.dto.ApiResponse;
+import com.jobportal.job_portal.dto.PaymentHistoryResponse;
 import com.jobportal.job_portal.entity.EmployerSubscriptionEntity;
 import com.jobportal.job_portal.repository.EmployerSubscriptionRepository; // <-- SỬA IMPORT Ở ĐÂY
 import com.jobportal.job_portal.service.PaymentService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -79,5 +84,18 @@ public class PaymentController {
             return ResponseEntity.badRequest()
                     .body(new ApiResponse<>(false, "Khách hàng hủy giao dịch hoặc thanh toán thất bại", null));
         }
+    }
+
+    @GetMapping("/history")
+    @PreAuthorize("hasAuthority('MANAGE_OWN_COMPANY')")
+    public ResponseEntity<ApiResponse<Page<PaymentHistoryResponse>>> getPaymentHistory(
+            Principal principal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+
+        Page<PaymentHistoryResponse> history = paymentService.getEmployerPaymentHistory(principal.getName(), page,
+                size);
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Lấy lịch sử giao dịch thành công", history));
     }
 }

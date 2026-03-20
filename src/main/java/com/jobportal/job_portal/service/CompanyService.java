@@ -43,7 +43,14 @@ public class CompanyService {
     // 1. Dành cho Employer: Lấy thông tin công ty của chính mình
     public CompanyResponse getMyCompany(String email) {
         CompanyEntity company = companyRepository.findByUser_Email(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Hồ sơ công ty chưa được tạo. Vui lòng cập nhật!"));
+                .orElse(null);
+
+        // NẾU CHƯA CÓ THÔNG TIN (Do tài khoản mới tạo) -> Trả về đối tượng rỗng để
+        // Frontend hiện form trống
+        if (company == null) {
+            return new CompanyResponse();
+        }
+
         return companyMapper.toResponse(company);
     }
 

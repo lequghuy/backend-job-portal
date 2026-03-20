@@ -96,7 +96,8 @@ public class AdminRoleService {
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy Role"));
 
         // Khóa việc sửa tên các Role gốc của hệ thống (RẤT QUAN TRỌNG)
-        if (role.getName().equals("ADMIN") || role.getName().equals("EMPLOYER") || role.getName().equals("CANDIDATE")) {
+        if (role.getName().equals("ADMIN") || role.getName().equals("EMPLOYER") ||
+                role.getName().equals("CANDIDATE")) {
             throw new com.jobportal.job_portal.exception.ApiException(
                     "Không được phép sửa tên nhóm quyền hệ thống mặc định!");
         }

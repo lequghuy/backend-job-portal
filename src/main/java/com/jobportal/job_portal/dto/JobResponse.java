@@ -23,6 +23,7 @@ public class JobResponse {
 
     // Lấy thêm thông tin từ các bảng liên quan để Frontend dễ hiển thị
     private Long companyId;
+    private String companyLogo;
     private String companyName;
     private String categoryName;
     private Long categoryId;

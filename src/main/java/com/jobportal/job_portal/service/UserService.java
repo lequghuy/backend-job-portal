@@ -45,6 +45,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final RoleRepository roleRepository;
+    private final CloudinaryService cloudinaryService;
 
     // --- LUỒNG CÁ NHÂN (Ai đăng nhập cũng dùng được) ---
 
@@ -127,32 +128,14 @@ public class UserService {
             throw new ApiException("Vui lòng chọn ảnh");
         }
 
-        try {
-            // Tạo thư mục uploads/avatars nếu chưa có
-            Path uploadPath = Paths.get("uploads/avatars").toAbsolutePath().normalize();
-            Files.createDirectories(uploadPath);
+        // Đẩy lên Cloudinary vào thư mục "avatars"
+        String fileUrl = cloudinaryService.uploadFile(file, "avatars");
 
-            // Đổi tên file để không bị trùng
-            String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
-            String fileExtension = originalFileName.substring(originalFileName.lastIndexOf("."));
-            String newFileName = UUID.randomUUID().toString() + fileExtension;
+        user.setAvatarUrl(fileUrl);
+        userRepository.save(user);
 
-            // Lưu file
-            Path targetLocation = uploadPath.resolve(newFileName);
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
-
-            // Lưu tên file vào Database
-            String fileUrl = "/uploads/avatars/" + newFileName;
-            user.setAvatarUrl(fileUrl);
-            userRepository.save(user);
-
-            log.info("Tài khoản {} vừa cập nhật avatar", email);
-            return fileUrl;
-
-        } catch (Exception ex) {
-            log.error("Lỗi lưu ảnh: ", ex);
-            throw new ApiException("Không thể lưu ảnh đại diện. Vui lòng thử lại!");
-        }
+        log.info("Tài khoản {} vừa cập nhật avatar", email);
+        return fileUrl;
     }
 
     // Thêm hàm này: Tạo tài khoản từ trang Admin

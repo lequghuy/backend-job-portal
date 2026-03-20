@@ -34,3 +34,5 @@ build/
 
 # Bỏ qua thư mục chứa ảnh upload của người dùng
 /src/main/resources/static/uploads/
+
+.env.properties

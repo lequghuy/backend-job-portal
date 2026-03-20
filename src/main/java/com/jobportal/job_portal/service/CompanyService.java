@@ -38,6 +38,7 @@ public class CompanyService {
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
     private final CompanyMapper companyMapper;
+    private final CloudinaryService cloudinaryService;
 
     // 1. Dành cho Employer: Lấy thông tin công ty của chính mình
     public CompanyResponse getMyCompany(String email) {
@@ -95,36 +96,16 @@ public class CompanyService {
 
     @Transactional
     public String uploadLogo(String email, MultipartFile file) {
-        // 1. Tìm công ty theo email
         CompanyEntity company = companyRepository.findByUser_Email(email)
                 .orElseThrow(() -> new ApiException("Không tìm thấy thông tin công ty"));
 
         if (file != null && !file.isEmpty()) {
-            try {
-                // 2. Tạo thư mục nếu chưa có (uploads/logo)
-                String uploadDir = "uploads/logo/";
-                Path uploadPath = Paths.get(uploadDir);
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
-                }
+            // Đẩy lên Cloudinary vào thư mục "logos"
+            String fileUrl = cloudinaryService.uploadFile(file, "logos");
 
-                // 3. Tạo tên file duy nhất để tránh trùng lặp
-                String originalFilename = file.getOriginalFilename();
-                String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-                String fileName = UUID.randomUUID().toString() + extension;
-
-                // 4. Lưu file vật lý vào ổ đĩa
-                Path filePath = uploadPath.resolve(fileName);
-                Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-                // 5. Cập nhật tên file vào Database
-                company.setLogo(fileName);
-                companyRepository.save(company);
-
-                return fileName;
-            } catch (IOException e) {
-                throw new ApiException("Lỗi khi lưu file logo: " + e.getMessage());
-            }
+            company.setLogo(fileUrl);
+            companyRepository.save(company);
+            return fileUrl;
         }
         throw new ApiException("File không hợp lệ");
     }

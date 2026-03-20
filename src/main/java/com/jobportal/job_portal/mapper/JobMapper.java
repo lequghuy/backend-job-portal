@@ -16,6 +16,7 @@ public interface JobMapper {
     @Mapping(target = "id", source = "id")
     @Mapping(target = "companyId", source = "company.id")
     @Mapping(target = "companyName", source = "company.companyName")
+    @Mapping(target = "companyLogo", source = "company.logo")
     @Mapping(target = "categoryName", source = "category.name")
     // SỬA Ở ĐÂY: Sử dụng tên tham số là 'entity'
     @Mapping(target = "skills", expression = "java(mapSkills(entity.getSkills()))")

@@ -49,6 +49,7 @@ public class JobService {
     private final JobCategoryRepository categoryRepository;
     private final SkillRepository skillRepository;
     private final JobMapper jobMapper;
+    private final CloudinaryService cloudinaryService;
 
     private final EmployerSubscriptionRepository subscriptionRepository;
 
@@ -213,26 +214,11 @@ public class JobService {
         }
 
         if (file != null && !file.isEmpty()) {
-            try {
-                String uploadDir = "uploads/jobs/";
-                Path uploadPath = Paths.get(uploadDir);
-                if (!Files.exists(uploadPath)) {
-                    Files.createDirectories(uploadPath);
-                }
+            // Đẩy lên Cloudinary vào thư mục "jobs"
+            String fileUrl = cloudinaryService.uploadFile(file, "jobs");
 
-                String originalFilename = file.getOriginalFilename();
-                String extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-                String fileName = UUID.randomUUID().toString() + extension;
-
-                Path filePath = uploadPath.resolve(fileName);
-                Files.copy(file.getInputStream(), filePath);
-
-                job.setThumbnail(fileName);
-                jobRepository.save(job);
-
-            } catch (IOException e) {
-                throw new RuntimeException("Lỗi khi lưu file ảnh: " + e.getMessage());
-            }
+            job.setThumbnail(fileUrl);
+            jobRepository.save(job);
         }
     }
 }

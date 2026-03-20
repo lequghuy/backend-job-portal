@@ -26,7 +26,7 @@ public class ResumeService {
     private final ResumeRepository resumeRepository;
     private final UserRepository userRepository;
     private final ResumeMapper resumeMapper;
-    private final FileStorageService fileStorageService; // Service mới để lưu file lên ổ cứng
+    private final CloudinaryService cloudinaryService;
 
     // 1. Thêm CV mới
     @Transactional
@@ -94,14 +94,15 @@ public class ResumeService {
         resumeRepository.delete(targetResume);
         log.info("Đã xóa CV id {} của ứng viên {}", resumeId, email);
     }
+
     // HÀM MỚI: Upload file và lưu thẳng vào Database
     @Transactional
     public ResumeResponse uploadAndAddResume(String email, MultipartFile file, String resumeName) {
         UserEntity candidate = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản ứng viên"));
 
-        // 1. Lưu file xuống ổ cứng và lấy URL
-        String fileUrl = fileStorageService.storeFile(file);
+        // 1. Đẩy CV (PDF) lên Cloudinary vào thư mục "resumes"
+        String fileUrl = cloudinaryService.uploadFile(file, "resumes");
 
         // 2. Kiểm tra xem có phải CV đầu tiên không để set Default
         List<ResumeEntity> existingResumes = resumeRepository.findByCandidate_Email(email);
@@ -111,7 +112,7 @@ public class ResumeService {
         ResumeEntity newResume = new ResumeEntity();
         newResume.setCandidate(candidate);
         newResume.setResumeName(resumeName);
-        newResume.setFileUrl(fileUrl); // Lưu đường dẫn thật của file vừa up
+        newResume.setFileUrl(fileUrl); // Lưu đường link Cloudinary thẳng vào DB
         newResume.setIsDefault(isFirstResume);
 
         ResumeEntity savedResume = resumeRepository.save(newResume);

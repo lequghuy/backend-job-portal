@@ -3,7 +3,6 @@ package com.jobportal.job_portal.repository;
 import com.jobportal.job_portal.entity.PaymentEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

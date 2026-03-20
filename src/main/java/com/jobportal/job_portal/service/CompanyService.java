@@ -14,9 +14,6 @@ import com.jobportal.job_portal.repository.specification.CompanySpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -25,10 +22,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.io.IOException;
-import java.nio.file.*;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
